@@ -92,6 +92,7 @@
 #include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/file_dialog.h"
+#include "scene/gui/flat_button.h"
 #include "scene/gui/flow_container.h"
 #include "scene/gui/graph_edit.h"
 #include "scene/gui/graph_node.h"
@@ -300,6 +301,7 @@ void register_scene_types() {
 	ClassDB::register_class<ShortCut>();
 	ClassDB::register_class<Control>();
 	ClassDB::register_class<Button>();
+	ClassDB::register_class<FlatButton>();
 	ClassDB::register_class<Label>();
 	ClassDB::register_virtual_class<ScrollBar>();
 	ClassDB::register_class<HScrollBar>();
