@@ -45,8 +45,13 @@ void FlatButton::_gui_input(Ref<InputEvent> p_event) {
 	}
 
 	for (int i = 0; i < inputs.size(); i++) {
-		if (p_event->is_action(inputs[i])) {
-			on_action_event(p_event, inputs[i]);
+		Ref<InputEvent> event = inputs[i];
+		if (!event.is_valid()) {
+			continue;
+		}
+
+		if (event->shortcut_match(p_event)) {
+			on_action_event(p_event, event);
 			return;
 		}
 	}
@@ -101,25 +106,25 @@ void FlatButton::_notification(int p_what) {
 	}
 }
 
-void FlatButton::_pressed(const String &event_name) {
+void FlatButton::_pressed(Ref<InputEvent> event) {
 	if (get_script_instance()) {
 		get_script_instance()->call(SceneStringNames::get_singleton()->_pressed);
 	}
 	pressed();
-	emit_signal("pressed", event_name);
+	emit_signal("pressed", event);
 }
 
-void FlatButton::on_action_event(Ref<InputEvent> p_event, const String &event_name) {
+void FlatButton::on_action_event(Ref<InputEvent> p_event, Ref<InputEvent> p_mapped_event) {
 	if (p_event->is_pressed()) {
 		status.press_attempt = true;
 		status.pressing_inside = true;
-		emit_signal("down", event_name);
+		emit_signal("down", p_mapped_event);
 	}
 
 	if (status.press_attempt && status.pressing_inside) {
-		if ((p_event->is_pressed() && press_mode == PRESS_MODE_PRESS)
-			|| (!p_event->is_pressed() && press_mode == PRESS_MODE_RELEASE)) {
-			_pressed(event_name);
+		if ((p_event->is_pressed() && press_mode == PRESS_MODE_DOWN)
+			|| (!p_event->is_pressed() && press_mode == PRESS_MODE_UP)) {
+			_pressed(p_mapped_event);
 		}
 	}
 
@@ -132,7 +137,7 @@ void FlatButton::on_action_event(Ref<InputEvent> p_event, const String &event_na
 		}
 		status.press_attempt = false;
 		status.pressing_inside = false;
-		emit_signal("up", event_name);
+		emit_signal("up", p_mapped_event);
 	}
 
 	update();
@@ -172,20 +177,20 @@ FlatButton::PressMode FlatButton::get_press_mode() const {
 	return press_mode;
 }
 
-void FlatButton::set_inputs(const Vector<String> &p_inputs) {
+void FlatButton::set_inputs(const Array &p_inputs) {
 	inputs = p_inputs;
 }
 
-Vector<String> FlatButton::get_inputs() const {
+Array FlatButton::get_inputs() const {
 	return inputs;
 }
 
-void FlatButton::set_shortcuts(const Vector<String> &p_shortcuts) {
+void FlatButton::set_shortcuts(const Array &p_shortcuts) {
 	shortcuts = p_shortcuts;
 	set_process_unhandled_input(shortcuts.size() > 0);
 }
 
-Vector<String> FlatButton::get_shortcuts() const {
+Array FlatButton::get_shortcuts() const {
 	return shortcuts;
 }
 
@@ -214,8 +219,13 @@ void FlatButton::_unhandled_input(Ref<InputEvent> p_event) {
 	}
 
 	for (int i = 0; i < shortcuts.size(); i++) {
-		if (p_event->is_action(shortcuts[i])) {
-			on_action_event(p_event, shortcuts[i]);
+		Ref<InputEvent> event = shortcuts[i];
+		if (!event.is_valid()) {
+			continue;
+		}
+
+		if (event->shortcut_match(p_event)) {
+			on_action_event(p_event, event);
 			return;
 		}
 	}
@@ -241,17 +251,17 @@ void FlatButton::_bind_methods() {
 
 	BIND_VMETHOD(MethodInfo("_pressed"));
 
-	ADD_SIGNAL(MethodInfo("pressed", PropertyInfo(Variant::STRING, "event_name")));
-	ADD_SIGNAL(MethodInfo("up", PropertyInfo(Variant::STRING, "event_name")));
-	ADD_SIGNAL(MethodInfo("down", PropertyInfo(Variant::STRING, "event_name")));
+	ADD_SIGNAL(MethodInfo("pressed", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
+	ADD_SIGNAL(MethodInfo("up", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
+	ADD_SIGNAL(MethodInfo("down", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "disabled"), "set_disabled", "is_disabled");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "press_mode", PROPERTY_HINT_ENUM, "Press,Release"), "set_press_mode", "get_press_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::POOL_STRING_ARRAY, "inputs", PROPERTY_HINT_TYPE_STRING, ""), "set_inputs", "get_inputs");
-	ADD_PROPERTY(PropertyInfo(Variant::POOL_STRING_ARRAY, "shortcuts", PROPERTY_HINT_TYPE_STRING, ""), "set_shortcuts", "get_shortcuts");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "press_mode", PROPERTY_HINT_ENUM, "Down,Up"), "set_press_mode", "get_press_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "inputs", PROPERTY_HINT_NONE, ""), "set_inputs", "get_inputs");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "shortcuts", PROPERTY_HINT_NONE, ""), "set_shortcuts", "get_shortcuts");
 
-	BIND_ENUM_CONSTANT(PRESS_MODE_PRESS);
-	BIND_ENUM_CONSTANT(PRESS_MODE_RELEASE);
+	BIND_ENUM_CONSTANT(PRESS_MODE_DOWN);
+	BIND_ENUM_CONSTANT(PRESS_MODE_UP);
 }
 
 FlatButton::FlatButton() {
@@ -261,7 +271,7 @@ FlatButton::FlatButton() {
 	status.pressing_inside = false;
 	status.disabled = false;
 	set_focus_mode(FOCUS_ALL);
-	press_mode = PRESS_MODE_RELEASE;
+	press_mode = PRESS_MODE_UP;
 }
 
 FlatButton::~FlatButton() {

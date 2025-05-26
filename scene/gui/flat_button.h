@@ -38,8 +38,8 @@ class FlatButton : public Control {
 
 public:
 	enum PressMode {
-		PRESS_MODE_PRESS,
-		PRESS_MODE_RELEASE,
+		PRESS_MODE_DOWN,
+		PRESS_MODE_UP,
 	};
 
 private:
@@ -52,12 +52,12 @@ private:
 	} status;
 
 	PressMode press_mode;
-	Vector<String> inputs;
-	Vector<String> shortcuts;
+	Array inputs;
+	Array shortcuts;
 
-	void _pressed(const String &event_name);
+	void _pressed(Ref<InputEvent> event);
 
-	void on_action_event(Ref<InputEvent> p_event, const String &event_name);
+	void on_action_event(Ref<InputEvent> p_event, Ref<InputEvent> p_mapped_event);
 
 protected:
 	virtual void pressed();
@@ -75,11 +75,11 @@ public:
 	void set_press_mode(PressMode p_press_mode);
 	PressMode get_press_mode() const;
 
-	void set_inputs(const Vector<String> &p_inputs);
-	Vector<String> get_inputs() const;
+	void set_inputs(const Array &p_inputs);
+	Array get_inputs() const;
 
-	void set_shortcuts(const Vector<String> &p_shortcuts);
-	Vector<String> get_shortcuts() const;
+	void set_shortcuts(const Array &p_shortcuts);
+	Array get_shortcuts() const;
 
 	FlatButton();
 	~FlatButton();
